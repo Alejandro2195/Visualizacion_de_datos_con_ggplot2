@@ -1,0 +1,129 @@
+---
+title: "Visualización de datos con ggplot2 - Parte 1"
+author: "Alejandro José Gómez García"
+date: "15/5/2022"
+output: html_document
+---
+
+                               VISUALIZACIÓN DE DATOS CON ggplot - Parte 1
+
+En este primer documento enseñaré las funciones básicas de ggplot2 y a cómo visualizar nuestros datos utilizando este paquete.
+Para ello utilizaremos los paquetes "ggplot2" y "tidyverse" (éste último es donde se encuentra la base de datos "mpg" que utilizaremos para este ejercicio)
+
+```{r, echo=FALSE, warning=FALSE}
+library(tidyverse)
+library(ggplot2)
+
+mpg  #Base de datos
+```
+
+Vamos a trabajar con los datos de "mpg".
+Las variables "displ" y "hwy" representan el tamaño del motor (en litros) y la eficiencia del uso del combustible (en millas por galón "mpg")
+
+Cada gráfico se realiza utilizando la función ggplot() cuyo primer argumento ("data") es el set de datos donde se encuentran las variables a graficar. Sin embargo, la función por sí sola no grafica, sino que necesita funciones de mapeo. Estas funciones especifican el tipo de gráfico que realizará (por ejemplo: geom_point() es la función para realizar un scatterplot). Además, la función de mapeo SIEMPRE debe contener el argumento mapping que SIEMPRE será igual a la función aes() la cual contiene las variables que se plotearán (y todo lo relacionado con ellas).
+
+EJEMPLO 1:
+
+ggplot(data=datos) + geom_point( mapping = aes( x=var1, y=var2))
+
+```{r, warning=FALSE}
+ggplot(data = mpg)+
+  geom_point(mapping = aes(x=displ, y=hwy))
+```
+
+Dentro de la función aes() se realiza todo lo relacionado a las variables (cuáles se utilizarán, la forma en la que se plotearán, el color, transparencia, tamaño, forma, etc). Todas estas características pueden cambiarse de acuerdo a una tercera variable como es la clase a la que pertenecen las variabes ploteadas.
+
+EJEMPLO 2:
+
+ggplot(data=datos) + geom_point( mapping = aes( x=var1, y=var2, color=class)) -> color
+
+ggplot(data=datos) + geom_point( mapping = aes( x=var1, y=var2, size=class)) -> tamaño
+
+ggplot(data=datos) + geom_point( mapping = aes( x=var1, y=var2, shape=class)) -> forma
+
+ggplot(data=datos) + geom_point( mapping = aes( x=var1, y=var2, alpha=class)) -> transparencia
+
+
+```{r, warning=FALSE}
+#color
+ggplot(data=mpg)+
+  geom_point(mapping = aes(x=displ, y=hwy,color=class))
+
+#tamaño
+ggplot(data=mpg)+geom_point(mapping = aes(x=displ, y=hwy, size= class))
+#La advertencia que se muestra es que estamos asignando "tamaño" a una variable discreta (class) lo que no tiene mucho sentido (tener en cuenta que esto es un ejemplo ilustrativo).
+
+#transparencia
+ggplot(data=mpg)+geom_point(mapping = aes(x=displ, y=hwy, alpha=class))
+
+#forma
+ggplot(data=mpg)+geom_point(mapping = aes(x=displ, y=hwy, shape=class))
+#NOTA IMPORTANTE: Al usar diferentes formas, R solo utiliza 6 a la vez por lo que si hay más de 6 clases solo ploteará las seis primeras
+```
+
+
+También podemos graficar los datos de acuerdo a condiciones que definamos sobre los datos. Por ejemplo, a continuación graficaré los datos previos, pero con la condición de que los que posean valores menores a 30 en la variable "hwy" tengan una coloración diferente a datos con valores mayores.
+
+```{r, warning=FALSE}
+ggplot(data=mpg)+
+  geom_point(mapping = aes(x=displ, y=hwy,color=hwy<30))
+```
+
+"Facets" es una forma de añadir nuevas variables al gráfico. La función "facet_wrap" se usa para añadir una sola variable, cuyo argumento es la variable en cuestión precedida de ~. Simplemente se debe encadenar al resto de la función ggplot() con el signo +.
+
+```{r, warning=FALSE}
+ggplot(data=mpg)+ geom_point(mapping=aes(x=displ, y=hwy))+
+  facet_wrap(~class, nrow=2)
+```
+
+Para añadir varias variables se utiliza la función "facet_grid". En este caso el argumento debe contener las variables que se incluyen separadas por ~
+
+```{r, warning=FALSE}
+ggplot(data=mpg)+geom_point(mapping = aes(x=displ, y=hwy))+
+  facet_grid(~drv)
+```
+
+
+                                  Geometric Objects
+                                  
+geom_ puede ser seguido de diferentes argumentos en dependencia de cómo quieras graficar tus datos (geom_point, geom_smooth, etc). Todos estas funciones se conocen como "Geometric Objects"
+
+Para añadir varios "geom_" simplemente añade diferentes tipos con "+".
+
+```{r, warning=FALSE}
+ggplot(data=mpg)+
+  geom_point(mapping = aes(x=displ, y=hwy, color=drv))+
+  geom_smooth(mapping = aes(x=displ, y=hwy, color=drv))
+```
+
+Otra variante para hacer esto es agrupar el parámetro aes() dentro de ggplot (dado que las variables son las mismas) y solo mantener en "geom_" la variable que nos interese destacar:
+
+```{r, warning=FALSE}
+ggplot(data=mpg, mapping = aes(x=displ, y=hwy))+
+  geom_point(mapping = aes(color=class))+
+  geom_smooth()
+```
+
+También se puede especificar si se desea plotear solo una parte de los datos, o determinadas clases.
+
+Con la función "filter" en este ejemplo se seleccionó solamente la clase "2seater" para ser ploteada en "geom_smooth". El parámetro "se=False" es en el caso de "geom_smooth" para no mostrar la desviación estándar
+
+```{r, warning=FALSE}
+ggplot(data=mpg, mapping = aes(x=displ, y=hwy))+
+  geom_point(mapping = aes(color=class))+
+  geom_smooth(data=filter(mpg, class=="2seater"), se = FALSE)
+```
+
+Otros ejemplos:
+
+```{r, warning=FALSE}
+ggplot(data = mpg,mapping = aes(x=displ, y=hwy))+
+  geom_point(mapping = aes(color=drv))+
+  geom_smooth(mapping = aes(linetype=drv, color=drv),se = FALSE)
+
+ggplot(data=mpg, mapping = aes(x=displ, y=hwy))+
+  geom_point(mapping = aes(color=drv))+
+  geom_smooth(se=FALSE)
+
+```
+

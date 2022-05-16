@@ -1,0 +1,175 @@
+---
+title: "Visualización de datos con ggplot - Parte 2"
+author: "Alejandro José Gómez García"
+date: "15/5/2022"
+output: html_document
+---
+
+                               VISUALIZACIÓN DE DATOS CON ggplot - Parte 2
+
+En esta segunda parte me enfocaré en algunas transformaciones estadísticas sencillas, en algunas funciones interesantes que utilizar a la hora de graficar y de otros tipos de gráficos que se pueden realizar con R.
+
+En este caso utilizaremos la base de datos "diamonds", así como los paquetes utilizados en la parte 1 ("tidyverse" y "ggplot2")
+
+```{r, echo=FALSE, warning=FALSE}
+library(tidyverse)
+library(ggplot2)
+
+diamonds  #Base de datos
+```
+
+En este caso ploteamos en un gráfico de barras solamente una variable. Por defecto, estos gráficos grafican el conteo de cada categoría (parámetro "..count..") en ausencia de una segunda variable.
+
+```{r  , warning=FALSE} 
+
+ggplot(data=diamonds)+
+  geom_bar(mapping = aes(x=cut))
+
+#En este ejemplo se grafica en el eje y la proporción de cada categoría de la variable x (se utiliza "..prop..")
+ggplot(data=diamonds)+
+  geom_bar(mapping = aes(x=cut, y= ..prop.., group=1))
+```
+
+También se pueden utilizar otras funciones como "stat_summary" que generaliza los valores de x para cada valor de x. La ventaja de esta función es que puedes introducir funciones para especificar qué graficar.
+
+```{r  , warning=FALSE} 
+ggplot(data=diamonds)+
+  stat_summary(mapping = aes(x=cut, y=depth),
+               fun.ymin = min,
+               fun.ymax = max,
+               fun.y=median)
+```
+
+IMPORTANTE
+Si no se incluye group = 1, entonces todas las barras en el gráfico tendrán la misma altura, una altura de 1. La función geom_bar() asume que los grupos son iguales a los valores x ya que la estadística calcula los conteos dentro del grupo . 
+
+```{r  , warning=FALSE} 
+ggplot(data = diamonds) +
+  geom_bar(mapping = aes(x = cut, y = ..prop.., group=1))
+```
+
+En este caso cuando se utiliza la función "fill" para colorear cada barra en relación a su altura relativa, la variable "y" debe estar normalizada de forma manual dado que "..prop.." calcula el porcentaje dentro del grupo. Necesita una variable de agrupación; de lo contrario, cada x es su propio grupo y prop = 1 que es 100%, para cada x.
+
+```{r  , warning=FALSE} 
+ggplot(data = diamonds) +
+  geom_bar(
+    mapping = aes(x = cut, fill=color, y = ..count../sum(..count..) ) )
+```
+
+Otra forma de hacer lo mismo es simplemente en el eje y plotear "..count..".
+
+```{r  , warning=FALSE} 
+ggplot(data = diamonds) +
+  geom_bar(mapping = aes(x = cut, fill=color, y = ..count..))
+```
+
+                                        Ajustes de "position"
+
+Se pueden colorear las barras de los gráficos de acuerdo a las variables. Si se utiliza la función "color" solo se colorea el contorno.
+
+```{r  , warning=FALSE} 
+ggplot(data=diamonds)+
+  geom_bar(mapping = aes(x=cut, color=cut))
+```
+
+Para colorear cada barra se debe usar "fill".
+
+```{r  , warning=FALSE} 
+ggplot(data=diamonds)+
+  geom_bar(mapping = aes(x=cut, fill=cut))
+
+```
+
+Si se utiliza como argumento de la función "fill" otra variable, esta se representa dentro de cada categoría#de la variable x como un rectángulo.
+
+```{r  , warning=FALSE} 
+ggplot(data=diamonds)+
+  geom_bar(mapping = aes(x=cut, fill=clarity))
+```
+
+El parámetro "position" dentro de "geom_bar" se puede modificar a 3 valores en dependencia de lo que se quiera:
+
+  1.- "identity" no se suele usar en barplots, es más común en scatterplots. Esto no es muy útil para las barras, porque las superpone. Para ver esa superposición, debemos hacer que las barras sean ligeramente transparentes configurando alfa en un valor pequeño, o completamente transparentes configurando "fill = NA".
+
+```{r  , warning=FALSE} 
+ggplot(data=diamonds, mapping = aes(x=cut, fill=clarity))+
+  geom_bar(alpha=1/5, position="identity")
+```
+
+  2.- "fill" hace que todas las barras tengan la misma altura, lo que puede ser útil para comparar proporciones
+
+```{r  , warning=FALSE} 
+ggplot(data=diamonds)+
+  geom_bar(mapping = aes(x=cut, fill=clarity), position="fill")
+```
+
+  3.- "dodge" coloca los objetos superpuestos uno al lado del otro, siendo más sencillo comparar los valores individuales
+
+
+```{r  , warning=FALSE} 
+ggplot(data=diamonds)+
+  geom_bar(mapping=aes(x=cut, fill= clarity), position="dodge")
+```
+
+
+Otro ajuste, esta vez para scatterplots, consiste en eliminar la forma ordenada del siguiente gráfico. Por defecto, trata de ordenar los puntos colocándolos en una cuadrícula, provocando que haya mucha superposición y que no se observen todos los puntos existentes. 
+
+```{r  , warning=FALSE} 
+ggplot(data=mpg)+
+  geom_point(mapping = aes(x=displ, y=hwy))
+```
+
+Para ello se añade position="jitter" que dispersa los puntos y ayuda a visualizarlos mejor. También tiene su proia forma abreviada como "geom_jitter()". "geom_jitter()" tiene los parámetros "height" y "width" que controlan la dispersión de los puntos en los planos x e y.
+
+
+NOTA IMPORTANTE: Este parámetro añade ruido al plot y hace que los puntos no aparezcan en su posición exacta ya que evita la superposición. A pequeña escala hace el gráfico más inexacto, pero a gran escala mejora la visualización de los datos
+
+```{r  , warning=FALSE} 
+ggplot(data=mpg)+
+  geom_point(mapping = aes(x=displ, y=hwy), position="jitter")
+
+ggplot(data=mpg)+
+  geom_jitter(mapping = aes(x=displ, y=hwy))
+
+ggplot(data=mpg)+
+  geom_jitter(mapping = aes(x=displ, y=hwy), height = 5, width = 3)
+```
+
+
+                                    SISTEMA DE COORDENADAS
+Aquí mostraré algunas funciones útiles referidas a los sistemas de coordenadas. 
+
+  1. - coord_flip() intercambia los ejex x e y. Útil, por ejemplo, para boxplots horizontales .
+
+```{r  , warning=FALSE} 
+ggplot(data=mpg, mapping = aes(x=class, y=hwy))+
+  geom_boxplot()
+
+ggplot(data=mpg, mapping = aes(x=class, y=hwy))+
+  geom_boxplot()+
+  coord_flip()
+```
+
+  2. - coord_quickmap() te muestra las dimensiones correctas de mapas. Útil para datos espaciales.
+
+```{r  , warning=FALSE} 
+nz <- map_data("nz")
+ggplot(nz, aes(long, lat, group = group)) +
+  geom_polygon(fill = "white", color = "black")
+
+ggplot(nz, aes(long, lat, group = group)) +
+  geom_polygon(fill = "white", color = "black") +
+  coord_quickmap()
+```
+
+  3. - coord_polar() usa coordenadas polares. Otro tipo de gráfico.
+
+```{r  , warning=FALSE} 
+bar<- ggplot(data=diamonds)+
+  geom_bar(mapping = aes(x=cut, fill=cut), show.legend = FALSE, width = 1)+
+  theme(aspect.ratio = 1)+
+  labs(x=NULL, y=NULL)
+
+bar+coord_flip()
+bar+coord_polar()
+```
