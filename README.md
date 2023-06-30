@@ -1,2 +1,309 @@
 # Visualizacion_de_datos_en_R_con_ggplot2
 Introducción a lo básico de la visualización de datos en R con el paquete ggplot2
+
+---
+title: "Visualización de datos con ggplot2"
+author: "Alejandro José Gómez García"
+date: "15/5/2022"
+email: alejandrorex95@gmail.com
+output:
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+    code_download: TRUE
+    theme: united
+  csl: apa.csl
+---
+
+## Visualización de datos con ggplot
+
+En esta primera parte enseñaré las funciones básicas de ggplot2 y a cómo visualizar nuestros datos utilizando este paquete.
+Para ello utilizaremos los paquetes "ggplot2" y "tidyverse" (éste último es donde se encuentra la base de datos "mpg" que utilizaremos para este ejercicio)
+
+```{r, echo=FALSE, warning=FALSE}
+library(tidyverse)
+library(ggplot2)
+
+mpg  #Base de datos
+```
+
+Vamos a trabajar con los datos de "mpg".
+Las variables "displ" y "hwy" representan el tamaño del motor (en litros) y la eficiencia del uso del combustible (en millas por galón "mpg")
+
+Cada gráfico se realiza utilizando la función ggplot() cuyo primer argumento ("data") es el set de datos donde se encuentran las variables a graficar. Sin embargo, la función por sí sola no grafica, sino que necesita funciones de mapeo. Estas funciones especifican el tipo de gráfico que realizará (por ejemplo: geom_point() es la función para realizar un scatterplot). Además, la función de mapeo SIEMPRE debe contener el argumento mapping que SIEMPRE será igual a la función aes() la cual contiene las variables que se plotearán (y todo lo relacionado con ellas).
+
+EJEMPLO 1:
+
+ggplot(data=datos) + geom_point( mapping = aes( x=var1, y=var2))
+
+```{r, warning=FALSE}
+ggplot(data = mpg)+
+  geom_point(mapping = aes(x=displ, y=hwy))
+```
+
+Dentro de la función aes() se realiza todo lo relacionado a las variables (cuáles se utilizarán, la forma en la que se plotearán, el color, transparencia, tamaño, forma, etc). Todas estas características pueden cambiarse de acuerdo a una tercera variable como es la clase a la que pertenecen las variabes ploteadas.
+
+EJEMPLO 2:
+
+ggplot(data=datos) + geom_point( mapping = aes( x=var1, y=var2, color=class)) -> color
+
+ggplot(data=datos) + geom_point( mapping = aes( x=var1, y=var2, size=class)) -> tamaño
+
+ggplot(data=datos) + geom_point( mapping = aes( x=var1, y=var2, shape=class)) -> forma
+
+ggplot(data=datos) + geom_point( mapping = aes( x=var1, y=var2, alpha=class)) -> transparencia
+
+
+```{r, warning=FALSE}
+#color
+ggplot(data=mpg)+
+  geom_point(mapping = aes(x=displ, y=hwy,color=class))
+
+#tamaño
+ggplot(data=mpg)+geom_point(mapping = aes(x=displ, y=hwy, size= class))
+#La advertencia que se muestra es que estamos asignando "tamaño" a una variable discreta (class) lo que no tiene mucho sentido (tener en cuenta que esto es un ejemplo ilustrativo).
+
+#transparencia
+ggplot(data=mpg)+geom_point(mapping = aes(x=displ, y=hwy, alpha=class))
+
+#forma
+ggplot(data=mpg)+geom_point(mapping = aes(x=displ, y=hwy, shape=class))
+#NOTA IMPORTANTE: Al usar diferentes formas, R solo utiliza 6 a la vez por lo que si hay más de 6 clases solo ploteará las seis primeras
+```
+
+
+También podemos graficar los datos de acuerdo a condiciones que definamos sobre los datos. Por ejemplo, a continuación graficaré los datos previos, pero con la condición de que los que posean valores menores a 30 en la variable "hwy" tengan una coloración diferente a datos con valores mayores.
+
+```{r, warning=FALSE}
+ggplot(data=mpg)+
+  geom_point(mapping = aes(x=displ, y=hwy,color=hwy<30))
+```
+
+"Facets" es una forma de añadir nuevas variables al gráfico. La función "facet_wrap" se usa para añadir una sola variable, cuyo argumento es la variable en cuestión precedida de ~. Simplemente se debe encadenar al resto de la función ggplot() con el signo +.
+
+```{r, warning=FALSE}
+ggplot(data=mpg)+ geom_point(mapping=aes(x=displ, y=hwy))+
+  facet_wrap(~class, nrow=2)
+```
+
+Para añadir varias variables se utiliza la función "facet_grid". En este caso el argumento debe contener las variables que se incluyen separadas por ~
+
+```{r, warning=FALSE}
+ggplot(data=mpg)+geom_point(mapping = aes(x=displ, y=hwy))+
+  facet_grid(~drv)
+```
+
+
+## Geometric Objects
+                                  
+geom_ puede ser seguido de diferentes argumentos en dependencia de cómo quieras graficar tus datos (geom_point, geom_smooth, etc). Todos estas funciones se conocen como "Geometric Objects"
+
+Para añadir varios "geom_" simplemente añade diferentes tipos con "+".
+
+```{r, warning=FALSE}
+ggplot(data=mpg)+
+  geom_point(mapping = aes(x=displ, y=hwy, color=drv))+
+  geom_smooth(mapping = aes(x=displ, y=hwy, color=drv))
+```
+
+Otra variante para hacer esto es agrupar el parámetro aes() dentro de ggplot (dado que las variables son las mismas) y solo mantener en "geom_" la variable que nos interese destacar:
+
+```{r, warning=FALSE}
+ggplot(data=mpg, mapping = aes(x=displ, y=hwy))+
+  geom_point(mapping = aes(color=class))+
+  geom_smooth()
+```
+
+También se puede especificar si se desea plotear solo una parte de los datos, o determinadas clases.
+
+Con la función "filter" en este ejemplo se seleccionó solamente la clase "2seater" para ser ploteada en "geom_smooth". El parámetro "se=False" es en el caso de "geom_smooth" para no mostrar la desviación estándar
+
+```{r, warning=FALSE}
+ggplot(data=mpg, mapping = aes(x=displ, y=hwy))+
+  geom_point(mapping = aes(color=class))+
+  geom_smooth(data=filter(mpg, class=="2seater"), se = FALSE)
+```
+
+Otros ejemplos:
+
+```{r, warning=FALSE}
+ggplot(data = mpg,mapping = aes(x=displ, y=hwy))+
+  geom_point(mapping = aes(color=drv))+
+  geom_smooth(mapping = aes(linetype=drv, color=drv),se = FALSE)
+
+ggplot(data=mpg, mapping = aes(x=displ, y=hwy))+
+  geom_point(mapping = aes(color=drv))+
+  geom_smooth(se=FALSE)
+
+```
+
+## Transformaciones estadísticas
+
+En esta segunda parte me enfocaré en algunas transformaciones estadísticas sencillas, en algunas funciones interesantes que utilizar a la hora de graficar y de otros tipos de gráficos que se pueden realizar con R.
+
+En este caso utilizaremos la base de datos "diamonds", así como los paquetes utilizados en la parte 1 ("tidyverse" y "ggplot2")
+
+```{r, echo=FALSE, warning=FALSE}
+library(tidyverse)
+library(ggplot2)
+
+diamonds  #Base de datos
+```
+
+En este caso ploteamos en un gráfico de barras solamente una variable. Por defecto, estos gráficos grafican el conteo de cada categoría (parámetro "..count..") en ausencia de una segunda variable.
+
+```{r  , warning=FALSE} 
+
+ggplot(data=diamonds)+
+  geom_bar(mapping = aes(x=cut))
+
+#En este ejemplo se grafica en el eje y la proporción de cada categoría de la variable x (se utiliza "..prop..")
+ggplot(data=diamonds)+
+  geom_bar(mapping = aes(x=cut, y= ..prop.., group=1))
+```
+
+También se pueden utilizar otras funciones como "stat_summary" que generaliza los valores de x para cada valor de x. La ventaja de esta función es que puedes introducir funciones para especificar qué graficar.
+
+```{r  , warning=FALSE} 
+ggplot(data=diamonds)+
+  stat_summary(mapping = aes(x=cut, y=depth),
+               fun.ymin = min,
+               fun.ymax = max,
+               fun.y=median)
+```
+
+IMPORTANTE
+Si no se incluye group = 1, entonces todas las barras en el gráfico tendrán la misma altura, una altura de 1. La función geom_bar() asume que los grupos son iguales a los valores x ya que la estadística calcula los conteos dentro del grupo . 
+
+```{r  , warning=FALSE} 
+ggplot(data = diamonds) +
+  geom_bar(mapping = aes(x = cut, y = ..prop.., group=1))
+```
+
+## Ajustes de "fill"
+
+En este caso cuando se utiliza la función "fill" para colorear cada barra en relación a su altura relativa, la variable "y" debe estar normalizada de forma manual dado que "..prop.." calcula el porcentaje dentro del grupo. Necesita una variable de agrupación; de lo contrario, cada x es su propio grupo y prop = 1 que es 100%, para cada x.
+
+```{r  , warning=FALSE} 
+ggplot(data = diamonds) +
+  geom_bar(
+    mapping = aes(x = cut, fill=color, y = ..count../sum(..count..) ) )
+```
+
+Otra forma de hacer lo mismo es simplemente en el eje y plotear "..count..".
+
+```{r  , warning=FALSE} 
+ggplot(data = diamonds) +
+  geom_bar(mapping = aes(x = cut, fill=color, y = ..count..))
+```
+
+Se pueden colorear las barras de los gráficos de acuerdo a las variables. Si se utiliza la función "color" solo se colorea el contorno.
+
+```{r  , warning=FALSE} 
+ggplot(data=diamonds)+
+  geom_bar(mapping = aes(x=cut, color=cut))
+```
+
+Para colorear cada barra se debe usar "fill".
+
+```{r  , warning=FALSE} 
+ggplot(data=diamonds)+
+  geom_bar(mapping = aes(x=cut, fill=cut))
+
+```
+
+Si se utiliza como argumento de la función "fill" otra variable, esta se representa dentro de cada categoría#de la variable x como un rectángulo.
+
+```{r  , warning=FALSE} 
+ggplot(data=diamonds)+
+  geom_bar(mapping = aes(x=cut, fill=clarity))
+```
+
+## Ajustes de "position"
+
+El parámetro "position" dentro de "geom_bar" se puede modificar a 3 valores en dependencia de lo que se quiera:
+
+  1.- "identity" no se suele usar en barplots, es más común en scatterplots. Esto no es muy útil para las barras, porque las superpone. Para ver esa superposición, debemos hacer que las barras sean ligeramente transparentes configurando alfa en un valor pequeño, o completamente transparentes configurando "fill = NA".
+
+```{r  , warning=FALSE} 
+ggplot(data=diamonds, mapping = aes(x=cut, fill=clarity))+
+  geom_bar(alpha=1/5, position="identity")
+```
+
+  2.- "fill" hace que todas las barras tengan la misma altura, lo que puede ser útil para comparar proporciones
+
+```{r  , warning=FALSE} 
+ggplot(data=diamonds)+
+  geom_bar(mapping = aes(x=cut, fill=clarity), position="fill")
+```
+
+  3.- "dodge" coloca los objetos superpuestos uno al lado del otro, siendo más sencillo comparar los valores individuales
+
+
+```{r  , warning=FALSE} 
+ggplot(data=diamonds)+
+  geom_bar(mapping=aes(x=cut, fill= clarity), position="dodge")
+```
+
+
+Otro ajuste, esta vez para scatterplots, consiste en eliminar la forma ordenada del siguiente gráfico. Por defecto, trata de ordenar los puntos colocándolos en una cuadrícula, provocando que haya mucha superposición y que no se observen todos los puntos existentes. 
+
+```{r  , warning=FALSE} 
+ggplot(data=mpg)+
+  geom_point(mapping = aes(x=displ, y=hwy))
+```
+
+Para ello se añade position="jitter" que dispersa los puntos y ayuda a visualizarlos mejor. También tiene su proia forma abreviada como "geom_jitter()". "geom_jitter()" tiene los parámetros "height" y "width" que controlan la dispersión de los puntos en los planos x e y.
+
+
+NOTA IMPORTANTE: Este parámetro añade ruido al plot y hace que los puntos no aparezcan en su posición exacta ya que evita la superposición. A pequeña escala hace el gráfico más inexacto, pero a gran escala mejora la visualización de los datos
+
+```{r  , warning=FALSE} 
+ggplot(data=mpg)+
+  geom_point(mapping = aes(x=displ, y=hwy), position="jitter")
+
+ggplot(data=mpg)+
+  geom_jitter(mapping = aes(x=displ, y=hwy))
+
+ggplot(data=mpg)+
+  geom_jitter(mapping = aes(x=displ, y=hwy), height = 5, width = 3)
+```
+
+
+## Sistema de coordenadas
+Aquí mostraré algunas funciones útiles referidas a los sistemas de coordenadas. 
+
+  1. - coord_flip() intercambia los ejex x e y. Útil, por ejemplo, para boxplots horizontales .
+
+```{r  , warning=FALSE} 
+ggplot(data=mpg, mapping = aes(x=class, y=hwy))+
+  geom_boxplot()
+
+ggplot(data=mpg, mapping = aes(x=class, y=hwy))+
+  geom_boxplot()+
+  coord_flip()
+```
+
+  2. - coord_quickmap() te muestra las dimensiones correctas de mapas. Útil para datos espaciales.
+
+```{r  , warning=FALSE} 
+nz <- map_data("nz")
+ggplot(nz, aes(long, lat, group = group)) +
+  geom_polygon(fill = "white", color = "black")
+
+ggplot(nz, aes(long, lat, group = group)) +
+  geom_polygon(fill = "white", color = "black") +
+  coord_quickmap()
+```
+
+  3. - coord_polar() usa coordenadas polares. Otro tipo de gráfico.
+
+```{r  , warning=FALSE} 
+bar<- ggplot(data=diamonds)+
+  geom_bar(mapping = aes(x=cut, fill=cut), show.legend = FALSE, width = 1)+
+  theme(aspect.ratio = 1)+
+  labs(x=NULL, y=NULL)
+
+bar+coord_flip()
+bar+coord_polar()
+```
